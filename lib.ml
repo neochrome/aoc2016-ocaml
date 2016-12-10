@@ -207,6 +207,8 @@ module Stream = struct
     !result
   ;;
 
+  let reduce = fold;;
+
   let max stream =
     let rec search mx =
       match Stream.peek stream with
