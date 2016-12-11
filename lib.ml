@@ -317,6 +317,31 @@ module Stream = struct
     in Stream.from (next chunks)
   ;;
 
+  let batch size stream =
+    let rec next i =
+      let rec batch items n =
+        match Stream.peek stream with
+        | None -> items
+        | Some item ->
+          Stream.junk stream;
+          if n = 1 then item :: items |> List.rev
+          else batch (item :: items) (n - 1)
+      in match batch [] size with
+      | [] -> None
+      | items -> Some items
+    in Stream.from next
+  ;;
+
+  let count stream =
+    let rec count n =
+      match Stream.peek stream with
+      | Some _ -> Stream.junk stream; count (n + 1)
+      | None -> n
+    in count 0
+  ;;
+
+  let length = count;;
+
 end
 
 
