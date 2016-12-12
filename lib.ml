@@ -191,6 +191,14 @@ module Stream = struct
     Stream.from next
   ;;
 
+  let mapi f stream =
+    let rec next i =
+      try Some (f i (Stream.next stream))
+      with Stream.Failure -> None
+    in
+    Stream.from next
+  ;;
+
   let find f stream =
     let rec search v =
       if f v then v
@@ -208,6 +216,20 @@ module Stream = struct
   ;;
 
   let reduce = fold;;
+
+  let fold_while f init stream =
+    let rec iter acc =
+      match Stream.peek stream with
+      | None   -> acc
+      | Some x -> Stream.junk stream;
+        begin match f x acc with
+        | None      -> acc
+        | Some acc' -> iter acc'
+        end
+    in iter init
+  ;;
+
+  let reduce_while = fold_while;;
 
   let max stream =
     let rec search mx =
@@ -231,12 +253,13 @@ module Stream = struct
 
   let filter p stream =
     let rec next i =
-      try
-        let value = Stream.next stream in
-        if p value then Some value else next i
-      with Stream.Failure -> None
-    in
-    Stream.from next
+      match Stream.peek stream with
+      | None -> None
+      | Some x ->
+        Stream.junk stream;
+        if p x then Some x
+        else next i
+    in Stream.from next
   ;;
 
   let collect p stream =
@@ -498,4 +521,18 @@ module Map = struct
     ;;
   end
 
+end
+
+module Set = struct
+  module type S = sig
+    include Set.S
+    val fold: (elt -> 'a -> 'a) -> 'a -> t -> 'a
+  end
+
+  module Make (Ord: Set.OrderedType) : S with type elt = Ord.t = struct
+    module Set = Set.Make(Ord)
+    include Set
+
+    let fold f init set = Set.fold f set init;;
+  end
 end
