@@ -152,6 +152,8 @@ module File = struct
 
 end
 
+
+#load "str.cma";;
 module String = struct
   include String
 
@@ -167,6 +169,9 @@ module String = struct
     String.init (List.length chars) (fun i -> List.nth chars i)
   ;;
 
+  let starts_with prefix s =
+    Str.string_match (Str.regexp ("^" ^ (Str.quote prefix))) s 0
+  ;;
 end
 
 
