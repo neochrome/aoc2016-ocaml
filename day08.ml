@@ -6,7 +6,7 @@ let try_with f = function
 ;;
 
 let scan line fmt op = fun () ->
-  Scanf.sscanf line fmt (fun a b -> op a b)
+  Scanf.sscanf line fmt op
 ;;
 
 type lcd = { w:int; h:int; leds:bool array array };;
