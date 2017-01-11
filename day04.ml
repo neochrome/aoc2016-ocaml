@@ -51,7 +51,7 @@ assert ([
 File.open_in "./day04.input" (fun ch ->
   Stream.of_lines ch
   |> part1
-  |> Printf.printf "par1: %d\n"
+  |> Printf.printf "part1: %d\n"
 );;
 
 let rofl n = function
