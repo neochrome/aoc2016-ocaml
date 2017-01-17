@@ -451,13 +451,12 @@ module List = struct
     build init items
   ;;
 
-  let rec remove xs x =
-    match xs with
+  let rec remove x = function
     | [] -> []
-    | x' :: xs' ->
-      if x = x' then xs'
-      else x' :: (remove xs' x)
+    | hd :: tl when hd = x -> tl
+    | hd :: tl -> hd :: remove x tl
   ;;
+  let except = remove;;
 
   let rol = function
     | [] -> []
@@ -471,7 +470,7 @@ module List = struct
 
 end
 
-let ( -- ) = List.remove;;
+let ( -- ) xs x = List.remove x xs;;
 
 module Option = struct
   let value_of o =
