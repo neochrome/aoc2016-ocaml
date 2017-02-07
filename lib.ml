@@ -168,9 +168,17 @@ module String = struct
   let from_list chars =
     String.init (List.length chars) (fun i -> List.nth chars i)
   ;;
+  let of_list = from_list;;
 
   let starts_with prefix s =
     Str.string_match (Str.regexp ("^" ^ (Str.quote prefix))) s 0
+  ;;
+
+  let fold f init s =
+    let rec collect acc = function
+      | 0 -> f acc s.[0]
+      | n -> collect (f acc s.[n]) (n - 1)
+    in collect init (String.length s - 1)
   ;;
 end
 
