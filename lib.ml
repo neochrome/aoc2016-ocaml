@@ -386,8 +386,8 @@ end
 module List = struct
   include List
 
-  let keep = List.filter
-  ;;
+  let keep = List.filter;;
+  let reject f = List.filter (fun x -> not (f x));;
 
   let filteri p items =
     let rec search i matching = function
@@ -548,3 +548,46 @@ module Set = struct
     let fold f init set = Set.fold f set init;;
   end
 end
+
+module BFS = struct
+  module type StateType = sig
+    type t
+    val possible_from: t -> t list
+    val is_final: t -> bool
+    type 'a hash
+    val hash: t -> 'a hash
+  end
+  module Make (State: StateType) = struct
+    let search ?trace initial_state =
+      let states = Queue.create () in
+      let seen = Hashtbl.create 10000 in
+
+      let queue_if_not_seen steps = List.iter (fun state ->
+        let hashed = State.hash state in
+        if not (Hashtbl.mem seen hashed) then begin
+          Queue.push (steps,state) states;
+          Hashtbl.add seen hashed true
+        end
+      ) in
+
+      let rec iter n =
+        if Queue.is_empty states then None
+        else
+          let steps,state = Queue.pop states in
+          begin match trace with
+          | Some iterations when n mod iterations = 0 ->
+            Printf.printf "search: iterations=%d steps=%d states=%d seen=%d\n%!" n steps (Queue.length states) (Hashtbl.length seen)
+          | _ -> ()
+          end;
+          if State.is_final state then Some (steps,state)
+          else begin
+            State.possible_from state |> queue_if_not_seen (steps + 1);
+            iter (n+1)
+          end
+      in
+
+      State.possible_from initial_state |> queue_if_not_seen 1;
+      iter 0
+    ;;
+  end
+end;;

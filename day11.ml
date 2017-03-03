@@ -42,47 +42,7 @@ assert (as_parts [chip Polonium] |> safe);;
 assert (as_parts [chip Cobalt; rtg Cobalt] |> safe);;
 assert (as_parts [chip Cobalt; rtg Polonium] |> unsafe);;
 
-module BFS = struct
-  module type StateType = sig
-    type t
-    val possible_from: t -> t list
-    val is_done: t -> t option
-    type 'a hash
-    val hash: t -> 'a hash
-  end
-  module Make (State: StateType) = struct
-    let search initial_state =
-      let states = Queue.create () in
-      let seen = Hashtbl.create 10000 in
-
-      let queue_if_not_seen = List.iter (fun state ->
-        let hashed = State.hash state in
-        if not (Hashtbl.mem seen hashed) then begin
-          Queue.push state states;
-          Hashtbl.add seen hashed true
-        end
-      ) in
-
-      let rec iter n =
-        if n mod 10000 = 0 then Printf.printf "s: %d, q: %d, h: %d\n%!" n (Queue.length states) (Hashtbl.length seen);
-        if Queue.is_empty states then None
-        else
-          let state = Queue.pop states in
-          match State.is_done state with
-          | Some _ as result -> result
-          | None ->
-            State.possible_from state |> queue_if_not_seen;
-            iter (n + 1)
-      in
-
-      State.possible_from initial_state |> queue_if_not_seen;
-      iter 0
-    ;;
-  end
-end;;
-
-type state = { elevator: int; steps: int; floors: int array };;
-
+type state = { elevator: int; floors: int array };;
 
 let parts_on floor =
   let rec available n =
@@ -133,26 +93,22 @@ module BFSFloors = BFS.Make(struct
     |> List.keep (fun e -> e >= 0 && e <= 3)
     |> List.map (fun e ->
       parts |> List.map (fun p -> {
-        steps=state.steps + 1;
         elevator=e;
         floors=move p state.elevator e state.floors
       }) |> List.keep (fun state -> state.floors |> all_safe)
     ) |> List.flatten
   ;;
 
-  let is_done state =
+  let is_final state =
     let top_floor = Array.length state.floors - 1 in
-    if state.floors
-      |> Array.mapi (fun i parts -> if parts = none then i <> top_floor else i = top_floor)
-      |> Array.fold_left ( && ) true
-    then Some state
-    else None
+    state.floors
+    |> Array.mapi (fun i parts -> if parts = none then i <> top_floor else i = top_floor)
+    |> Array.fold_left ( && ) true
   ;;
 end);;
 
 let test_input = {
   elevator = 0;
-  steps = 0;
   floors = [|
     chips [Polonium;Thulium] |> as_parts;
     rtgs [Polonium] |> as_parts;
@@ -164,12 +120,11 @@ assert (test_input.floors |> all_safe);;
 test_input |> BFSFloors.search
 |> function
   | None -> failwith "no solution found"
-  | Some result -> Printf.printf "test: %d\n%!" result.steps
+  | Some (steps,_) -> Printf.printf "test: %d\n%!" steps
 ;;
 
 let part1_input = {
   elevator = 0;
-  steps = 0;
   floors = [|
     (rtgs [Polonium;Thulium;Promethium;Ruthenium;Cobalt]) @ (chips [Thulium;Ruthenium;Cobalt]) |> as_parts;
     chips [Polonium;Promethium] |> as_parts;
@@ -181,12 +136,11 @@ assert (part1_input.floors |> all_safe);;
 part1_input |> BFSFloors.search
 |> function
   | None -> failwith "no solution found"
-  | Some result -> Printf.printf "part1: %d\n%!" result.steps
+  | Some (steps,_) -> Printf.printf "part1: %d\n%!" steps
 ;;
 
 let part2_input = {
   elevator = 0;
-  steps = 0;
   floors = [|
     (rtgs [Polonium;Thulium;Promethium;Ruthenium;Cobalt;Elerium;Dilithium]) @ (chips [Thulium;Ruthenium;Cobalt;Elerium;Dilithium]) |> as_parts;
     chips [Polonium;Promethium] |> as_parts;
@@ -198,5 +152,5 @@ assert (part2_input.floors |> all_safe);;
 part2_input |> BFSFloors.search
 |> function
   | None -> failwith "no solution found"
-  | Some result -> Printf.printf "part2: %d\n%!" result.steps
+  | Some (steps,_) -> Printf.printf "part2: %d\n%!" steps
 ;;
